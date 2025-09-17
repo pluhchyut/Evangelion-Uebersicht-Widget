@@ -644,8 +644,17 @@ render: -> """
             <div class="contentS" style="margin-left:-25em">
                 <span style="font-size:15em">Weather</span>
             </div>
-            <div class="content" style="margin-left:30em;margin-top:-55em">
-                <span class="WeatherInfo" style="font-size:23em">Loading...</span>
+            <div class="content" style="margin-left:25em;margin-top:-55em">
+                <span class="WeatherTemp" style="font-size:23em">-- °F</span>
+            </div>
+            <div class="content" style="margin-left:25em;margin-top:-50em">
+                <span class="WeatherIcon" style="font-size:20em">☀️</span>
+            </div>
+            <div class="content" style="margin-left:25em;margin-top:-45em">
+                <span class="WeatherRain" style="font-size:20em">Rain: --%</span>
+            </div>
+            <div class="content" style="margin-left:25em;margin-top:-40em">
+                <span class="WeatherAQI" style="font-size:20em">AQI: --</span>
             </div>
         </div>
         <div class="nav a0" target="_blank" href="#" id="29"><s></s><b></b>
@@ -1025,15 +1034,42 @@ update: (output, domEl) ->
             if IPFehler != 0
                 IPFehler = 0
                 colourChange("#IPCell", config.colourIdle)
-        $(domEl).find('.PubIP').text("#{window.IPaddress}")
+        # NetU and NetD
         if (NetworkUp?)
             $(domEl).find('.NetU').text("#{NetworkUp}")
         if (NetworkDl?)
             $(domEl).find('.NetD').text("#{NetworkDl}")
-    # Weather
-    @run "curl -s 'https://wttr.in/?format=%C+%t'", (error, stdout, stderr) ->
+    # Public IP
+    @run "curl -s https://api.ipify.org", (error, stdout, stderr) ->
         if stdout?
-            $(domEl).find('.WeatherInfo').text(stdout.trim())
+            $(domEl).find('.PubIP').text(stdout.trim())
+
+    # Weather for New Providence, NJ
+    lat = "40.6970"
+    lon = "-74.4229"
+    api_key = "YOUR_API_KEY"
+    @run "curl -s 'https://api.openweathermap.org/data/2.5/weather?lat=#{lat}&lon=#{lon}&units=imperial&appid=#{api_key}'", (error, stdout, stderr) ->
+        if stdout?
+            try
+                data = JSON.parse(stdout)
+                temp = Math.round(data.main.temp) + ' °F'
+                desc = data.weather[0].main
+                rain = if data.rain? then data.rain['1h'] + '%' else '0%'
+                $(domEl).find('.WeatherTemp').text(temp)
+                $(domEl).find('.WeatherIcon').text(desc)
+                $(domEl).find('.WeatherRain').text("Rain: #{rain}")
+            catch err
+                console.log("Weather parse error", err)
+
+    # Air Quality for New Providence, NJ
+    @run "curl -s 'https://api.openweathermap.org/data/2.5/air_pollution?lat=#{lat}&lon=#{lon}&appid=#{api_key}'", (error, stdout, stderr) ->
+        if stdout?
+            try
+                aqiData = JSON.parse(stdout)
+                aqi = aqiData.list[0].main.aqi
+                $(domEl).find('.WeatherAQI').text("AQI: #{aqi}")
+            catch err
+                console.log("AQI parse error", err)
     # Do Not Disturb
     @run "defaults read ~/Library/Preferences/ByHost/com.apple.notificationcenterui doNotDisturb", (error, stdout, stderr) ->
         window.Disturbvalues = stdout[0]
@@ -1181,12 +1217,12 @@ update: (output, domEl) ->
         ->
             $(domEl).find("#25 .id").text("25")
     )
-    #$('#32').hover (
-    #    ->
-    #        colourChange("#32", config.colourIdleHover)
-    #        colourChange(".a4", config.colourIdleHover)
-    #        $(domEl).find(".a4x").css("visibility", "visible")
-    #), (
+    $('#32').hover (
+        ->
+            colourChange("#32", config.colourIdleHover)
+            colourChange(".a4", config.colourIdleHover)
+           $(domEl).find(".a4x").css("visibility", "visible")
+    ), (
     #    ->
     #        colourChange("#32", config.colourIdle)
     #        colourChange(".a4", "rgba(10,10,10,0)")
