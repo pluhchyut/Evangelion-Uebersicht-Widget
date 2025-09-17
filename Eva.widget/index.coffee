@@ -638,7 +638,16 @@ render: -> """
             </div>
             <div class="content"  style="margin-left:15em;margin-top:-64em;">
                 <span class="PubIP" style="font-size:13em;font-family:Futura;font-style:normal">Fehler</span>
-            </div></div>
+            </div>
+        </div>
+        <div class="nav a2" target="_blank" href="#" id="WeatherCell"><s></s><b></b>
+            <div class="contentS" style="margin-left:-25em">
+                <span style="font-size:15em">Weather</span>
+            </div>
+            <div class="content" style="margin-left:30em;margin-top:-55em">
+                <span class="WeatherInfo" style="font-size:23em">Loading...</span>
+            </div>
+        </div>
         <div class="nav a0" target="_blank" href="#" id="29"><s></s><b></b>
             <div class="id">29</div>
             <o></o><o style="transform:rotate(-60deg)"></o><o style="transform:rotate(-120deg)"></o>
@@ -823,6 +832,7 @@ afterRender: (domEl) ->
             else
                 console.log "You have the newest version. OK, you're cool"
 
+# Update function
 update: (output, domEl) ->
 # functions
     # This is for the warning animations
@@ -1020,6 +1030,10 @@ update: (output, domEl) ->
             $(domEl).find('.NetU').text("#{NetworkUp}")
         if (NetworkDl?)
             $(domEl).find('.NetD').text("#{NetworkDl}")
+    # Weather
+    @run "curl -s 'https://wttr.in/?format=%C+%t'", (error, stdout, stderr) ->
+        if stdout?
+            $(domEl).find('.WeatherInfo').text(stdout.trim())
     # Do Not Disturb
     @run "defaults read ~/Library/Preferences/ByHost/com.apple.notificationcenterui doNotDisturb", (error, stdout, stderr) ->
         window.Disturbvalues = stdout[0]
